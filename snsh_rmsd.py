@@ -113,13 +113,13 @@ def mk_gen_pdb(x,y,z,a,b,c,d,files,h):#x = tag, y = first_ref
 
 #a=ref, b=tag, c=this_traj, d=feature, e=spdb1, f=spdb2
 def sheba(a,b,c,d,e,f,g):
-	cmd_1 = GEAR + '/sheba_01 -x ' + a + ' ' + e
-	cmd_2 = GEAR + '/sheba_01 -t ' + b + '.' + c + '.' + str(g) + '.trf ' + e
-	cmd_3 = GEAR + '/rmsd ' + d + ' ' + a + ' ' + f + " bb >> ext_bb_rmsd.dat"
-	cmd_4 = GEAR + '/rmsd ' + d + ' ' + a + ' ' + f + " all >> ext_all_rmsd.dat"
+	cmd_1 = GEAR + '/sheba_01 -x ' + str(a) + ' ' + str(e)
+	cmd_2 = GEAR + '/sheba_01 -t ' + str(b) + '.' + str(c) + '.' + str(g) + '.trf ' + str(e)
+	cmd_3 = GEAR + '/rmsd ' + str(d) + ' ' + str(a) + ' ' + str(f) + " bb >> ext_bb_rmsd.dat"
+	cmd_4 = GEAR + '/rmsd ' + str(d) + ' ' + str(a) + ' ' + str(f) + " all >> ext_all_rmsd.dat"
 	subprocess.call(cmd_1,shell=True)
 	subprocess.call(cmd_2,shell=True)
-	shutil.move(b + '.' + c + '.' + str(g) + '.pdb.pdb',f)
+	shutil.move(str(b) + '.' + str(c) + '.' + str(g) + '.pdb.pdb',str(f))
 	subprocess.call(cmd_3,shell=True)
 	subprocess.call(cmd_4,shell=True)
 
