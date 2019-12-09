@@ -1,28 +1,19 @@
-import sys,os
+import sys,os,subprocess,glob
 
-fi = sys.argv[1]
-st1 = int(sys.argv[2])
-ed1 = int(sys.argv[3])
-#st2 = int(sys.argv[4])
-#ed2 = int(sys.argv[5])
-
-Lines = []
-def ff(f,num1,num2):#,num3,num4):
-	with open(f,'r') as F:
-		for line in F.readlines():
-			if line.startswith('ATOM'):
-				if num1 <= int(line[22:26].strip()) <= num2:Lines.append(line)
-				#elif num3 <= int(line[22:26].strip()) <= num4:Lines.append(line)
-			if line.startswith('TER'):
-				Lines.append(line)
-				ter = int(line[7:12].strip())
-				print ter
-	with open(f,'r') as ff:
-		for line in ff.readlines():
-			if line.startswith('ATOM'):
-				if ter <= int(line[7:12].strip()):Lines.append(line)
-		Lines.append('END')
-	with open(f +'_new','w') as W:
-		for line in Lines:
-			W.write(line)
-ff(fi,st1,ed1)#,st2,ed2)	
+inp_dir = sys.argv[1]
+os.chdir(inp_dir+'/dock_res/')
+GEAR = '/awork06-1/neoscan_gear'
+def enva_run(i):
+	ff=i.split('.')[0]
+	enva1 = GEAR+'/enva_rec3 -c ' + ff + '.pdb > '+ff + '.out'
+#	enva2 = GEAR+'/enva_rec3 -b ' + ff + '.pdb > '+ff + '_bb.out'
+#	enva3 = GAER+'/enva_rec3 -a ' + ff + '.pdb > '+ff + '_aa.out'
+	
+	return enva1
+def run_ep(p):
+	proc = subprocess.Popen([GEAR+'/enva_rec3 -c',p])
+	return proc
+procs = []
+for i in sorted(glob.glob('*.pdb')):
+	proc = run_ep(i)
+	procs.append(proc)

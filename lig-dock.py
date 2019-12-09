@@ -32,15 +32,15 @@ def pre_inp(sam,sam1):
 	
 	cmd = GEAR + '/reduce -Trim ' + sam + '/' + sam + '_ligand.pdb > ' + sam + '/' + sam + '_ligand_red.pdb'
 	subprocess.call(cmd,shell=True)
-	cmd1 = 'babel -ipdb ' + sam + '/' + sam + '_ligand_red.pdb -osdf ' + sam + '/' + sam + '_ligand.sdf'
+	cmd1 = 'babel -ipdb ' + sam + '/' + sam + '_ligand_red.pdb -osdf ' + sam + '/' + sam + '_ligand.sdf >> ' + sam + '/babel.log'
 	subprocess.call(cmd1,shell=True)
-	cmd2 = 'babel -ipdb ' + sam + '/' + sam + '_ligand_red.pdb -omol2 ' + sam + '/' + sam + '_ligand_red.mol2'
+	cmd2 = 'babel -ipdb ' + sam + '/' + sam + '_ligand_red.pdb -omol2 ' + sam + '/' + sam + '_ligand_red.mol2 >> ' + sam + '/babel.log'
 	subprocess.call(cmd2,shell=True)
 
 
 def gen_comp(sam,sam1,opt) :
 	if not os.path.exists(sam + '_receptor.pdb'):
-		cmdx1 = 'reduce -Trim ' + sam + '_protein.pdb > ' + sam + '_receptor.pdb'
+		cmdx1 = GEAR + '/reduce -Trim ' + sam + '_protein.pdb > ' + sam + '_receptor.pdb'
 		subprocess.call(cmdx1,shell=True)
 	if opt == 'nat':
 		with open('crystal_complex.pdb','a') as npdb :
@@ -125,18 +125,21 @@ def bcl_gen_conf(sam):
 	subprocess.call(cmd1,shell=True)
 
 sam = sys.argv[1] # PDB
-sam1 = sys.argv[2] # Lig
-sam2 = sys.argv[3] # No.of conformer
-sam3 = sys.argv[4] # N.of CPU for rosetta run
-out_arg = sys.argv[5] #log's location
+#sam1 = sys.argv[2] # Lig
+sam2 = sys.argv[2] # No.of conformer
+sam3 = sys.argv[3] # N.of CPU for rosetta run
+#out_arg = sys.argv[5] #log's location
 DOCK_RES = 'dock_res'
-ROSETTA_BIN = '/awork08/93_hong/rosetta_src_2019.14.60699_bundle/main/source/bin'
-ROSETTA_DB = '/awork08/93_hong/rosetta_src_2019.14.60699_bundle/main/database'
-ROSETTA_PY = '/awork08/93_hong/rosetta_src_2019.14.60699_bundle/main/source/scripts/python/public'
+ROSETTA_BIN = '/lwork01/rosetta_src_2019.40.60963_bundle/main/source/bin'
+ROSETTA_DB = '/lwork01/rosetta_src_2019.40.60963_bundle/main/database'
+ROSETTA_PY = '/lwork01/rosetta_src_2019.40.60963_bundle/main/source/scripts/python/public'
 BCL_GEAR = '/awork06-1/bcl-3.6.1-Linux-x86_64'
-GEAR = '/awork06-1/neoscan_gear'
-LIB = '/awork06-1/neoscan_lib'
-
+GEAR ='/home/user1/neoscan_gear' #'/awork06-1/neoscan_gear'
+LIB = '/home/user1/neoscan_lib'#'/awork06-1/neoscan_lib'
+with open(sam+'.pdb','r') as F:
+	for lin in F.readlines():
+		if lin.startswith('HETATM'): sam1=lin[17:20].strip()
+print sam1
 wdir = os.getcwd()
 
 pre_inp(sam,sam1)
@@ -150,10 +153,6 @@ try:
 		os.mkdir(DOCK_RES ,0777)
 except OSError:
 	pass
-try :
-	if not os.path.exists('/awork10-3/YKLee/' + out_arg):
-		os.makedirs('/awork10-3/YKLee/' + out_arg)
-except OSError: pass
 if os.path.exists('options'):
 	os.remove('options')
 
@@ -170,12 +169,13 @@ with open('options','a') as of :
 	of.write('-packing:ignore_ligand_chi true\n')
 	of.write('-parser:protocol ' + LIB + '/dock.xml\n')
 	of.write('-mistakes:restore_pre_talaris_2013_behavior true\n')
-	of.write('-analytic_etable_evaluation true')
+	of.write('-analytic_etable_evaluation true\n')
+	of.write('-qsar:max_grid_cache_size 1\n')
 
 if sam3 == 'single' :
-	cmdx = ROSETTA_BIN + '/rosetta_scripts.linuxgccrelease @options > /awork10-3/YKLee/' + out_arg + '/' + '_'.join(sam.split('_')[:3]) + '-' + sam1 + '.run_log'
+	cmdx = ROSETTA_BIN + '/rosetta_scripts.linuxgccrelease @options > run_log'
 else:
-	cmdx = 'mpirun -np ' + sam3 + ' ' + ROSETTA_BIN + '/rosetta_scripts.mpi.linuxgccrelease @options > /awork10-3/YKLee/' + out_arg + '/' + '_'.join(sam.split('_')[:3]) + '-' + sam1 + '.run_log'
+	cmdx = 'mpirun -np ' + sam3 + ' ' + ROSETTA_BIN + '/rosetta_scripts.mpi.linuxgccrelease @options > run_log'
 
 subprocess.call(cmdx,shell=True)
 

@@ -150,10 +150,6 @@ try:
 		os.mkdir(DOCK_RES ,0777)
 except OSError:
 	pass
-try :
-	if not os.path.exists('/awork10-3/YKLee/' + out_arg):
-		os.makedirs('/awork10-3/YKLee/' + out_arg)
-except OSError: pass
 if os.path.exists('options'):
 	os.remove('options')
 
@@ -168,14 +164,14 @@ with open('options','a') as of :
 	of.write('-packing:no_optH false\n')
 	of.write('-packing:flip_HNQ true\n')
 	of.write('-packing:ignore_ligand_chi true\n')
-	of.write('-parser:protocol ' + LIB + '/dock.xml\n')
+	of.write('-parser:protocol ' + LIB + '/dock_y.xml\n')
 	of.write('-mistakes:restore_pre_talaris_2013_behavior true\n')
 	of.write('-analytic_etable_evaluation true')
 
 if sam3 == 'single' :
-	cmdx = ROSETTA_BIN + '/rosetta_scripts.linuxgccrelease @options > /awork10-3/YKLee/' + out_arg + '/' + '_'.join(sam.split('_')[:3]) + '-' + sam1 + '.run_log'
+	cmdx = ROSETTA_BIN + '/rosetta_scripts.linuxgccrelease @options > run_log'
 else:
-	cmdx = 'mpirun -np ' + sam3 + ' ' + ROSETTA_BIN + '/rosetta_scripts.mpi.linuxgccrelease @options > /awork10-3/YKLee/' + out_arg + '/' + '_'.join(sam.split('_')[:3]) + '-' + sam1 + '.run_log'
+	cmdx = 'mpirun -np ' + sam3 + ' ' + ROSETTA_BIN + '/rosetta_scripts.mpi.linuxgccrelease @options > run_log'
 
 subprocess.call(cmdx,shell=True)
 

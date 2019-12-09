@@ -262,7 +262,7 @@ for i in range(stTrajId-1,edTrajId):
 		spdb1  = tag + '.' + this_traj + '.' + str(rpdb) + '.pdb'
 		spdb2 = tag + '.' + this_traj + '.' + str(rpdb) + '_tr.pdb'
 		if not os.path.exists(spdb2):
-			shutil.copy(spdb,spdb1)
+			shutil.copy(spdb,spdb2)
 			sheba(ref,tag,this_traj,wdir+'/'+tag+'.list',spdb1,spdb2,rpdb)
 
 '''

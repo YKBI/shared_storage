@@ -135,7 +135,7 @@ ROSETTA_DB = '/awork08/93_hong/rosetta_src_2019.14.60699_bundle/main/database'
 ROSETTA_PY = '/awork08/93_hong/rosetta_src_2019.14.60699_bundle/main/source/scripts/python/public'
 BCL_GEAR = '/awork06-1/bcl-3.6.1-Linux-x86_64'
 GEAR = '/awork06-1/neoscan_gear'
-LIB = '/awork06-1/neoscan_lib'
+LIB = '/awork06-1/YKLee/'#'/awork06-1/neoscan_lib'
 
 wdir = os.getcwd()
 
@@ -170,7 +170,10 @@ with open('options','a') as of :
 	of.write('-packing:ignore_ligand_chi true\n')
 	of.write('-parser:protocol ' + LIB + '/dock.xml\n')
 	of.write('-mistakes:restore_pre_talaris_2013_behavior true\n')
+	#of.write('-analytic_etable_evaluation true')
+	of.write('-qsar:max_grid_cache_size 1\n')
 	of.write('-analytic_etable_evaluation true')
+	#of.write('-relax')
 
 if sam3 == 'single' :
 	cmdx = ROSETTA_BIN + '/rosetta_scripts.linuxgccrelease @options > /awork10-3/YKLee/' + out_arg + '/' + '_'.join(sam.split('_')[:3]) + '-' + sam1 + '.run_log'

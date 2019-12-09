@@ -187,25 +187,43 @@ def acc_chem_count(sam,lfeats,rfeats,ref):
 				lf.write('%s\n'%(lfeat))
 
 	with open('feat_rmsd.txt','a') as ff:
-		ff.write('PDB\trmsd\tfrmsd\n')	
+		ff.write('PDB\tfrmsd\tfrmsd^2\n')	
 	
 	idx1 = 0
-	pdbs = glob.glob('*.pdb')
+	pdbs = sorted(glob.glob('*.pdb'))
 	atoms = []
 	for pdb in pdbs:
+		print pdb
 		acc = []
 		phi = []
 		psi = []
 		sig = []
-		cmdx = GEAR + '/reduce -Trim ' + pdb.split('.')[0] + '.pdb > ' + pdb.split('.')[0] + '_red.pdb'
-		subprocess.call(cmdx,shell=True)
-		cmd = GEAR + '/enva_rec -c ' + pdb.split('.')[0] + '_red.pdb > ' + pdb.split('.')[0] + '.out'
+	#	cmdx = GEAR + '/reduce -Trim ' + pdb.split('.')[0] + '.pdb > ' + pdb.split('.')[0] + '_red.pdb'
+	#	subprocess.call(cmdx,shell=True)
+		cmd = GEAR + '/enva_rec3 -c ' + pdb.split('.')[0] + '.pdb > ' + pdb.split('.')[0] + '.out'
 		subprocess.call(cmd,shell=True)
-		cmd1 = GEAR + '/enva_rec -b ' + pdb.split('.')[0] + '_red.pdb > ' + pdb.split('.')[0] + '_bb.out'
+		cmd1 = GEAR + '/enva_rec3 -b ' + pdb.split('.')[0] + '.pdb > ' + pdb.split('.')[0] + '_bb.out'
 		subprocess.call(cmd1,shell=True)
-		cmd2 = GEAR + '/rmsd_het ligand_feat.txt ' + ref + ' ' + pdb.split('.')[0] + '_red' + ' >> feat_rmsd.txt'
+		cmd3 = GEAR + '/enva_rec3 -a ' + pdb.split('.')[0] + '.pdb > ' + pdb.split('.')[0] + '_aa.out'
+		subprocess.call(cmd3,shell=True)
+		cmd2 = GEAR + '/rmsd_het ligand_feat.txt ' + ref + ' ' + pdb.split('.')[0] + ' >> feat_rmsd.txt'
 		subprocess.call(cmd2,shell=True)
 		
+		raccs = []
+		for i in range(len(rfeats)):
+			with open(pdb.split('.')[0] + '_aa.out','r') as af :
+				lines = af.readlines()
+				for line in lines:
+					if line.startswith('ATOM') >0 :
+						aenvs = ' '.join(line[26:].split()).split(' ')
+					#	print '%s\t%s\t%s\t%s\t%s\t%s'%(rfeats_atmn[i],aenvs[2],rfeats_res[i],aenvs[5],rfeats_resn[i],aenvs[3])
+					#	print '%s\t%s\t%s\t%s\t%s\t%s'%(rfeats[i].split('_')[0],line[22:26].strip(),rfeats[i].split('_')[1],line[17:20].strip(),
+						if rfeats[i].split('_')[0] == line[22:26].strip() and rfeats[i].split('_')[1] == line[17:20].strip() and rfeats[i].split('_')[2] == line[12:16].strip() :
+					#	if str(rfeats_atm[i]) == line[6:11].strip() :
+						#	print '%s\t%s'%(rfeats_atm[i],line[:-1])
+							raccs.append(aenvs[5])
+	#	print raccs
+		"""
 		for lfeat in lfeats:
 			if lfeat == '-':
 				acc.append('-')
@@ -223,15 +241,39 @@ def acc_chem_count(sam,lfeats,rfeats,ref):
 								phi.append(envs[1])
 								psi.append(envs[2])
 								sig.append(envs[8])
-
+		"""
+		with open('../' + sam + '_energy_matrix/total_rac_ct.txt','a') as rf :
+			if idx1 == 0 :
+				rf.write('PDB')
+				if len(rfeats_atm) > 0 :
+					for rfeat_atm in rfeats_atm:
+						rf.write('\tAA_%s'%(rfeat_atm))
+				else:
+					for rfeat in rfeats:
+						rf.write('\tAA_%s'%(rfeat))
+				rf.write('\n')
+			for i in range(len(rfeats)):
+				if i == 0 :
+					rf.write('%s\t%s'%(pdb.split('.')[0],raccs[i]))	
+				else:
+					rf.write('\t%s'%(raccs[i]))
+			rf.write('\n')
+		"""
 		with open('../' + sam + '_energy_matrix/total_ac_ct.txt','a') as af :
 			if idx1 == 0 :
 				af.write('PDB')
-				for rfeat in rfeats:
-					af.write('\tAA_%s'%(rfeat))
-					af.write('\tPHI_%s'%(rfeat))
-					af.write('\tPSI_%s'%(rfeat))
-					af.write('\tSIG_%s'%(rfeat))
+				if len(rfeats_atm) > 0 :
+					for rfeat_atm in rfeats_atm:
+						af.write('\tAA_%s'%(rfeat_atm))
+						af.write('\tPHI_%s'%(rfeat_atm))
+						af.write('\tPSI_%s'%(rfeat_atm))
+						af.write('\tSIG_%s'%(rfeat_atm))
+				else:
+					for rfeat in rfeats:
+						af.write('\tAA_%s'%(rfeat))
+						af.write('\tPHI_%s'%(rfeat))
+						af.write('\tPSI_%s'%(rfeat))
+						af.write('\tSIG_%s'%(rfeat))
 				af.write('\n')
 			for i in range(len(lfeats)):
 				if i == 0 :
@@ -239,12 +281,13 @@ def acc_chem_count(sam,lfeats,rfeats,ref):
 				else :
 					af.write('\t%s\t%s\t%s\t%s'%(acc[i],phi[i],psi[i],sig[i]))
 			af.write('\n')
+		"""
 		with open('../' + sam + '_energy_matrix/total_hh_ct.txt','a') as hf :
 			if idx1 == 0 :
 				hf.write('PDB\tN.of.BB\n')
 			with open(pdb.split('.')[0] + '_bb.out','r') as hh :
                                 hlines = hh.readlines()
-			hf.write('%s\t%d\n'%(pdb.split('.')[0].replace('_red',''),len(hlines)))
+			hf.write('%s\t%d\n'%(pdb.split('.')[0],len(hlines)))
 		idx1 = idx1 + 1
 
 	with open('feat_rmsd1.txt','a') as ff1:
@@ -254,7 +297,7 @@ def acc_chem_count(sam,lfeats,rfeats,ref):
 				if line.startswith('PDB') > 0 :
 					ff1.write('PDB\trmsd\tfrmsd\n')
 				else:
-					ff1.write('%s\t%s\t%s'%(line.split('\t')[0].replace('_red',''),line.split('\t')[1],line.split('\t')[2]))
+					ff1.write('%s\t%s\t%s'%(line.split('\t')[0],line.split('\t')[1],line.split('\t')[2]))
 
 
 	os.chdir('../')
@@ -286,38 +329,50 @@ def rmsd_calc(ref,lfeats):
 	os.chdir('../')
 def help():
         print "print help usage\n"
-        print "Usage: python %s -s [ sample name ] -i [ input folder] -r [ ref version ] -f [ format ] -d [ cancer or non-cancer]\n"%sys.argv[0]
+        print "Usage: python %s [ sample name ] [ receptor index table ]\n"%sys.argv[0]
         return
 
 if len(sys.argv) == 1 :
 	help()
 else :
 	sam = sys.argv[1]
+	sam1 = sys.argv[2]
 	feat = ['Energy_all[bond]','Energy_all[angle]','Energy_all[dih]','Energy_all[total]','Energy_all[vdw]','Energy_all[elec]','Energy_all[elec14]','Energy_rec_lig[elec14]','Energy_rec_lig[elec]']
 	header = ['PDB','Energy_all[bond]','Energy_all[angle]','Energy_all[dih]','Energy_all[vdw14]','Energy_all[elec14]','Energy_all[vdw]','Energy_all[elec]','Energy_all[total]','Energy_rec_lig[bond]','Energy_rec_lig[angle]','Energy_rec_lig[dih]','Energy_rec_lig[vdw14]','Energy_rec_lig[elec14]','Energy_rec_lig[vdw]','Energy_rec_lig[elec]','Energy_rec_lig[total]','LIE_all[EELEC]','LIE_all[EVDW]','LIE_charge[EELEC]','LIE_charge[EVDW]','LIE_nonpolar[EELEC]','LIE_nonpolar[EVDW]','LIE_polar[EELEC]','LIE_polar[EVDW]']
 	cl = ['energy_all','energy_rec_lig','lie_all','lie_charge','lie_nonpolar','lie_polar']
 	GEAR = '/awork06-1/neoscan_gear'
 
-	lig = sam.split('_')[1]
-	rec = '_'.join(sam.split('_')[:2])
+	if len(sam.split('_')) > 2 :
+		lig = sam.split('_')[1]#[len(sam.split('_'))-1]
+		rec = sam.split('_')[0] + '_' + sam.split('_')[1]
+	else :
+		lig = sam.split('_')[1]
+		rec = sam.split('_')[0]
 
-	df = pd.read_csv(rec + '_trans_feat_atom_stat.txt',sep='\t')
+	lfeats=[]
+	rfeats=[]
+	rfeats_atm=[]
+	rfeats_atmn=[]
+	rfeats_res=[]
+	rfeats_resn=[]
+	df = pd.read_csv(sam1,sep='\t')
+	col_lists = df.columns.tolist()
 	lfeats = df[lig].tolist()
-	rfeats = df['rec_atom'].tolist()
+	print lfeats
+	
+	if 'index' in col_lists:
+		rfeats = df['index'].tolist()
+	else:
+		rfeats_atm = df['rec_atom'].tolist()
+		rfeats_atmn = df['rec_atomn'].tolist()
+		rfeats_res = df['rec_res'].tolist()
+		rfeats_resn = df['rec_resn'].tolist()
+		for i in range(len(rfeats_res)):
+			rfeats.append(str(rfeats_res[i]) + '_' + rfeats_resn[i] + '_' + rfeats_atmn[i])
 
-#	lfeats = []
-#	rfeats = []
-#	with open(sam + '_feat.out','r') as ff:
-#		lines = ff.readlines()
-#		for line in lines:
-#			if line.find('_dist') < 0 :
-#				rfeats.append(line.split('\t')[0])
-#				lfeats.append(line.split('\t')[1])
+#	print rfeats
 
 	os.chdir(sam)
-
-#	print lfeats
-#	print rfeats
 
 	try: 
 		if not os.path.exists(sam + '_energy_matrix'):
@@ -326,15 +381,29 @@ else :
 		pass
 
 	acc_chem_count(sam,lfeats,rfeats,'../crystal_complex')
-#	hbond_count(sam)
-#	rmsd_calc('../crystal_complex',lfeats)
 
-	df_ac = pd.read_csv(sam + '_energy_matrix/total_ac_ct.txt',sep='\t')
+	with open('total_score_r1.tsv','w') as tf :
+		with open('total_score_r.tsv','r') as fx:
+			lines = fx.readlines()
+			for line in lines:
+				if line.startswith('description') > 0 :
+					tf.write(line.replace('description','PDB'))
+				else:
+					tf.write(line)
+
+	df_or = pd.read_csv('total_score_r1.tsv',sep='\t')
+	#df_ac = pd.read_csv(sam + '_energy_matrix/total_ac_ct.txt',sep='\t')
+	df_rac = pd.read_csv(sam + '_energy_matrix/total_rac_ct.txt',sep='\t')
 	df_hh = pd.read_csv(sam + '_energy_matrix/total_hh_ct.txt',sep='\t')
 	df_rmsd = pd.read_csv('dock_res/feat_rmsd1.txt', sep='\t')
-	df_sc = pd.merge(df_rmsd,df_hh)
-	df_total_env = pd.merge(df_sc,df_ac)	
-	df_total_env.to_csv(sam + '_energy_matrix/full_env.txt',sep='\t',index=False,na_rep='-')	
+	total_df1 = [df_or,df_rmsd,df_hh,df_rac]
+	#total_df2 = [df_or,df_rmsd,df_hh,df_ac]
+	df_final1 = reduce(lambda left,right: pd.merge(left,right, on=['PDB'], how='outer'), total_df1)
+	#df_final2 = reduce(lambda left,right: pd.merge(left,right, on=['PDB'], how='outer'), total_df2)
+	df_final3 = pd.merge(df_hh,df_rac)
+	df_final1.to_csv(sam + '_energy_matrix/full_rec_env.txt',sep='\t',index=False,na_rep='-')
+	#df_final2.to_csv(sam + '_energy_matrix/full_env.txt',sep='\t',index=False,na_rep='-')
+	df_final3.to_csv(sam + '_energy_matrix/' + lig + '_total.txt',sep='\t',index=False,na_rep='-')
 #	df_sc = pd.read_csv('total_score_r.tsv',sep='\t')
 #	df_total_env = pd.merge(df_sc,df_hh)
 #	df_total_env1 = pd.merge(df_total_env,df_ac)

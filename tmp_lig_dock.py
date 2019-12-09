@@ -151,8 +151,8 @@ try:
 except OSError:
 	pass
 try :
-	if not os.path.exists('/awork10-3/YKLee/' + out_arg):
-		os.makedirs('/awork10-3/YKLee/' + out_arg)
+	if not os.path.exists('/awork06-1/YKLee/' + out_arg):
+		os.makedirs('/awork06-1/YKLee/' + out_arg)
 except OSError: pass
 if os.path.exists('options'):
 	os.remove('options')
