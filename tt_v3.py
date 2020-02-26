@@ -56,7 +56,7 @@ else :
 	wdir = os.getcwd()
 	os.chdir( sam + '_' + sam1 + '_' + sam2 + '/PDB_1ST')
 	fpdbs = []
-	fpdbs = glob.glob('*.pdb')
+	fpdbs = glob.glob('*[0-9].pdb')
 	for fpdb in fpdbs :
 		ser = int(fpdb.split('.')[0].split('_')[5])
 		nfpdb = sam1 + '_1ST_' + str(ser)
@@ -106,7 +106,7 @@ else :
 
 	os.chdir('../PDB_2ND')
 	lpdbs = []
-	lpdbs = glob.glob('*.pdb')
+	lpdbs = glob.glob('*[0-9].pdb')
 	for lpdb in lpdbs :
 		ser = int(lpdb.split('.')[0].split('_')[5])
 		nfpdb = sam1 + '_2ND_' + str(ser)

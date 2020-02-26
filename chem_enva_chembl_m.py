@@ -13,7 +13,7 @@ from pandas import DataFrame
 #import statsmodels.api as sm
 import numpy as np
 import glob
-
+import multiprocessing
 def trim(tag,ene,st,ed,lenx,idx1) :
 	tex = ''
 #	print '%s\t%f\t%d\t%d'%(tag,ene,lenx,idx1)
@@ -178,6 +178,22 @@ def acc_count(tag,aaa,idx) :
 			af.write('PDB\tP1\tP2\tP3\tP4\tP5\tP6\tP7\tP8\tP9\tPHI1\tPHI2\tPHI3\tPHI4\tPHI5\tPHI6\tPHI7\tPHI8\tPHI9\tPSI1\tPSI2\tPSI3\tPSI4\tPSI5\tPSI6\tPSI7\tPSI8\tPSI9\n')
 		af.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n'%(aaa,acc[0],acc[1],acc[2],acc[3],acc[4],acc[5],acc[6],acc[7],acc[8],phi[0],phi[1],phi[2],phi[3],phi[4],phi[5],phi[6],phi[7],phi[8],psi[0],psi[1],psi[2],psi[3],psi[4],psi[5],psi[6],psi[7],psi[8]))
 
+def env_working(pdb):
+	if not os.path.exists(pdb.split('.')[0] + '.out'):
+		cmd = GEAR + '/enva_rec3 -c ' + pdb.split('.')[0] + '.pdb > ' + pdb.split('.')[0] + '.out'
+		subprocess.call(cmd,shell=True)
+	if not os.path.exists(pdb.split('.')[0] + '_bb.out'):
+		cmd1 = GEAR + '/enva_rec3 -b ' + pdb.split('.')[0] + '.pdb > ' + pdb.split('.')[0] + '_bb.out'
+		subprocess.call(cmd1,shell=True)
+	if not os.path.exists(pdb.split('.')[0] + '_aa.out'):
+		cmd3 = GEAR + '/enva_rec3 -a ' + pdb.split('.')[0] + '.pdb > ' + pdb.split('.')[0] + '_aa.out'
+		subprocess.call(cmd3,shell=True)
+	if not os.path.exists('feat_rmsd.txt'):
+		cmd2 = GEAR + '/rmsd_het ligand_feat.txt ' + ref + ' ' + pdb.split('.')[0] + ' >> feat_rmsd.txt'
+		subprocess.call(cmd2,shell=True)
+		
+
+
 def acc_chem_count(sam,lfeats,rfeats,ref):
 
 	if not os.path.exists('crystal_complex_aa.out') :
@@ -215,12 +231,17 @@ def acc_chem_count(sam,lfeats,rfeats,ref):
 	idx1 = 0
 	pdbs = sorted(glob.glob('*.pdb'))
 	atoms = []
+	pool = multiprocessing.Pool(24)
+	pool.map(env_working,pdbs)
+	pool.close()
+	pool.join()
 	for pdb in pdbs:
 		print pdb
 		acc = []
 		phi = []
 		psi = []
 		sig = []
+		'''
 		if not os.path.exists(pdb.split('.')[0] + '.out'):
 			cmd = GEAR + '/enva_rec3 -c ' + pdb.split('.')[0] + '.pdb > ' + pdb.split('.')[0] + '.out'
 			subprocess.call(cmd,shell=True)
@@ -233,7 +254,7 @@ def acc_chem_count(sam,lfeats,rfeats,ref):
 		if not os.path.exists('feat_rmsd.txt'):
 			cmd2 = GEAR + '/rmsd_het ligand_feat.txt ' + ref + ' ' + pdb.split('.')[0] + ' >> feat_rmsd.txt'
 			subprocess.call(cmd2,shell=True)
-		
+		'''
 		raccs = []
 		for i in range(len(rfeats)):
 			with open(pdb.split('.')[0] + '_aa.out','r') as af :
@@ -381,15 +402,21 @@ else :
 	feat = ['Energy_all[bond]','Energy_all[angle]','Energy_all[dih]','Energy_all[total]','Energy_all[vdw]','Energy_all[elec]','Energy_all[elec14]','Energy_rec_lig[elec14]','Energy_rec_lig[elec]']
 	header = ['PDB','Energy_all[bond]','Energy_all[angle]','Energy_all[dih]','Energy_all[vdw14]','Energy_all[elec14]','Energy_all[vdw]','Energy_all[elec]','Energy_all[total]','Energy_rec_lig[bond]','Energy_rec_lig[angle]','Energy_rec_lig[dih]','Energy_rec_lig[vdw14]','Energy_rec_lig[elec14]','Energy_rec_lig[vdw]','Energy_rec_lig[elec]','Energy_rec_lig[total]','LIE_all[EELEC]','LIE_all[EVDW]','LIE_charge[EELEC]','LIE_charge[EVDW]','LIE_nonpolar[EELEC]','LIE_nonpolar[EVDW]','LIE_polar[EELEC]','LIE_polar[EVDW]']
 	cl = ['energy_all','energy_rec_lig','lie_all','lie_charge','lie_nonpolar','lie_polar']
-	GEAR = '/home/user1/neoscan_gear' #'awork06-1/neoscan_gear'
+	GEAR = '/home/user1/neoscan_gear'
+	#GEAR = '/awork06-1/neoscan_gear'
 
 	if len(sam.split('_')) > 2 :
-		lig = sam.split('_')[1].split('-')[0] #sam.split('_')[len(sam.split('_'))-1]
-		rec = sam.split('_')[0] #sam.split('_')[0] + '_' + sam.split('_')[1]
+		#lig = sam.split('_')[1].split('-')[0] #sam.split('_')[len(sam.split('_'))-1]
+		#rec = sam.split('_')[0] 
+		lig = sam.split('-')[0].split('_')[1]
+		rec = sam.split('-')[0]
+		#sam.split('_')[0] + '_' + sam.split('_')[1]
 	else :
 		lig = sam.split('_')[1].split('-')[0] #sam.split('_')[1]
 		rec = sam.split('_')[0] #sam.split('_')[0]
 
+	print '\n\nlig: '+lig
+	print '\n\nrec: '+rec
 	lfeats=[]
 	rfeats=[]
 	rfeats_atm=[]

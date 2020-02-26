@@ -13,6 +13,7 @@ from pandas import DataFrame
 #import statsmodels.api as sm
 import numpy as np
 import multiprocessing
+from functools import partial
 def trim(tag,ene,st,ed,lenx,idx1) :
 	tex = ''
 #	print '%s\t%f\t%d\t%d'%(tag,ene,lenx,idx1)
@@ -141,7 +142,7 @@ def integ_energy(tag1,tag,clx,idx):
 									mat.write(text1)
 					idx1 = idx1 + 1
 
-def hbond_count(tag,aaa,idx) :
+def hbond_count(tag,aaa):#,idx) :
 	flists=[]
 	if os.path.exists(aaa + '/' + aaa + '_pep1.pdb') :
 		os.remove(aaa + '/' + aaa + '_pep1.pdb')
@@ -162,17 +163,17 @@ def hbond_count(tag,aaa,idx) :
 		for flist in flists :
 			with open(flist,'r') as inf :
 				f3.write(inf.read())
-	cmd = GEAR + '/enva_rec.v1.1 -b ' + aaa + '/' + aaa + '_rec3.pdb ' + '> ' + tag + '_energy_matrix/' + aaa + '_hh.txt'
+	cmd = GEAR + '/enva -b ' + aaa + '/' + aaa + '_rec3.pdb ' + '> ' + tag + '_energy_matrix/' + aaa + '_hh.txt'
 	subprocess.call(cmd,shell=True)
-	with open(tag + '_energy_matrix/total_hh_ct.txt','a') as hf :
-		if idx == 0:
-			hf.write('PDB\tN.of.BB\n')
+	with open(tag + '_energy_matrix/total_hh_ct.txt1','a') as hf :
+		#if idx == 0:
+		#	hf.write('PDB\tN.of.BB\n')
 		with open(tag + '_energy_matrix/' + aaa + '_hh.txt','r') as hh :
 			hlines = hh.readlines()
 		hf.write('%s\t%d\n'%(aaa,len(hlines)))
 	#	os.remove('energy_matrix/' + aaa + '_hh.txt')
-
-def acc_count(tag,aaa,idx) :
+	sedcmd = 'sed \'1s/^/PDB\\tN.of.BB\\n/\' ' + tag +'_energy_matrix/total_hh_ct.txt1 > ' + tag + '_energy_matrix/total_hh_ct.txt' 
+def acc_count(tag,aaa):#,idx) :
 	flists =[]
 	bbb = aaa.split('_')
 	flists.append(aaa + '/' + aaa + '_rec1.pdb')
@@ -186,7 +187,7 @@ def acc_count(tag,aaa,idx) :
 			with open(flist,'r') as inf :
 				f4.write(inf.read())
 	os.chdir(aaa)
-	cmd = GEAR + '/enva_rec.v1.1 -e ' + aaa + '_rec4.pdb B'
+	cmd = GEAR + '/enva -e ' + aaa + '_rec4.pdb B'
 	subprocess.call(cmd,shell=True)
 	os.chdir('../')
 	acc = []
@@ -202,15 +203,16 @@ def acc_count(tag,aaa,idx) :
 				phi.append(envs[4])
 				psi.append(envs[5])
 
-	with open(tag + '_energy_matrix/total_ac_ct.txt','a') as af :
-		if idx == 0 :
-			af.write('PDB\tP1\tP2\tP3\tP4\tP5\tP6\tP7\tP8\tP9\tPHI1\tPHI2\tPHI3\tPHI4\tPHI5\tPHI6\tPHI7\tPHI8\tPHI9\tPSI1\tPSI2\tPSI3\tPSI4\tPSI5\tPSI6\tPSI7\tPSI8\tPSI9\n')
+	with open(tag + '_energy_matrix/total_ac_ct.txt1','a') as af :
+		#if idx == 0 :
+		#	af.write('PDB\tP1\tP2\tP3\tP4\tP5\tP6\tP7\tP8\tP9\tPHI1\tPHI2\tPHI3\tPHI4\tPHI5\tPHI6\tPHI7\tPHI8\tPHI9\tPSI1\tPSI2\tPSI3\tPSI4\tPSI5\tPSI6\tPSI7\tPSI8\tPSI9\n')
 		af.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n'%(aaa,acc[0],acc[1],acc[2],acc[3],acc[4],acc[5],acc[6],acc[7],acc[8],phi[0],phi[1],phi[2],phi[3],phi[4],phi[5],phi[6],phi[7],phi[8],psi[0],psi[1],psi[2],psi[3],psi[4],psi[5],psi[6],psi[7],psi[8]))
-
-def doing_chptr(samx):
-	hbond_count(sam,samx,idx)
-	acc_count(sam,samx,idx)
-	idx +=1
+	sedcmd = 'sed \'1s/^/PDB\\tP1\\tP2\\tP3\\tP4\\tP5\\tP6\\tP7\\tP8\\tP9\\tPHI1\\tPHI2\\tPHI3\\tPHI4\\tPHI5\\tPHI6\\tPHI7\\tPHI8\\tPHI9\\tPSI1\\tPSI2\\tPSI3\\tPSI4\\tPSI5\\tPSI6\\tPSI7\\tPSI8\\tPSI9\\n/\' '+ tag + '_energy_matrix/total_ac_ct.txt1 ' + tag + '_energy_matrix/total_ac_ct.txt'
+	sp.call(sedcmd,shell=True)
+def doing_chptr(sam,samx):
+	hbond_count(sam,samx)
+	acc_count(sam,samx)
+	#idx +=1
 def help():
         print "print help usage\n"
         print "Usage: python %s -s [ sample name ] -i [ input folder] -r [ ref version ] -f [ format ] -d [ cancer or non-cancer]\n"%sys.argv[0]
@@ -238,14 +240,15 @@ else :
 			samxs.append(line[:-1])
 	text = ""
 	idx = 0
-	#pool = multiprocessing.Pool(24)
-	#pool.map(doing_chptr,samxs)
-	#pool.close()
-	#pool.join()
-	for samx in samxs :
-		hbond_count(sam,samx,idx)
-		acc_count(sam,samx,idx)
-		idx = idx + 1
+	pool = multiprocessing.Pool(24)
+	pppp = partial(doing_chptr,sam=sam)
+	pool.map(pppp,samxs)
+	pool.close()
+	pool.join()
+	#for samx in samxs :
+	#	hbond_count(sam,samx,idx)
+	#	acc_count(sam,samx,idx)
+	#	idx = idx + 1
 
 	df_hh = pd.read_csv(sam + '_energy_matrix/total_hh_ct.txt',sep='\t')
 	df_ac = pd.read_csv(sam + '_energy_matrix/total_ac_ct.txt',sep='\t')

@@ -26,8 +26,8 @@ def help():
 if len(sys.argv) == 1:
 	help()
 else :
-	GEAR = '/awork06-1/neoscan_gear'
-	LIB = '/awork06-1/neoscan_lib'
+	GEAR = '/awork06-1/neoscan_gear'#'/home/user1/neoscan_gear'#'/awork06-1/neoscan_gear'
+	LIB = '/awork06-1/neoscan_lib'#'/home/user1/neoscan_lib'#'/awork06-1/neoscan_lib'
 	sam = sys.argv[1]
 	sam1 = sys.argv[2]
 	sam2 = sys.argv[3]

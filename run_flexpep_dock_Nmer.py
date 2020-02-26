@@ -13,30 +13,32 @@ num_cpu = sys.argv[5]
 nout = sys.argv[6]
 HLAclaty = HLAclass[-1] + HLAtype
 RES = seq + '_' + pdb + '_' + HLAclass + HLAtype
-ROOT = '/awork06-1/YKLee/'
+ROOT = '/awork06-1/YKLee/pdpdb/Neoscan_V2/'
 FLEXPEP_BIN = '/awork08/93_hong/rosetta_src_2019.14.60699_bundle/main/source/bin'
 ROSETTA_DB = '/awork08/93_hong/rosetta_src_2019.14.60699_bundle/main/database'
 GEAR = '/awork08/93_hong/NGS_ARS/Gear'
-REC_cwd = '/awork06-1/YKLee/NAVS/receptor/'
-PEP_cwd = '/awork06-1/YKLee/NAVS/peptide/'
+PEP_cwd = '/awork06-1/YKLee/pdpdb/Neoscan_V2/v2/revise_pdb/peptide/'#'/awork06-1/YKLee/pdpdb/Neoscan_V2/peptide_pdb_conv/'#'/awork06-1/YKLee/NAVS/receptor/'
+REC_cwd = '/awork06-1/YKLee/pdpdb/Neoscan_V2/v2/revise_pdb/receptor/'#'/awork06-1/YKLee/pdpdb/Neoscan_V2/receptor_pdb/'#'/awork06-1/YKLee/NAVS/peptide/'
 def gen_native(aa,bb,cc):
     HLAclaty = aa[-1] + bb
     OLines = []
+    #with open(REC_cwd + HLAclaty + '/' + cc + '_rec.pdb','r') as rpdb:
     with open(REC_cwd + HLAclaty + '/' + cc + '_rec.pdb','r') as rpdb:
         for line in rpdb.readlines(): OLines.append(line)
         OLines.append('TER\n')
-    with open(PEP_cwd + HLAclaty + '/'+ cc + '_pep.pdb','r') as ppdb:
+    #with open(PEP_cwd + HLAclaty + '/'+ cc + '_pep.pdb','r') as ppdb:
+    with open(PEP_cwd + HLAclaty + '/' + cc + '_pep.pdb','r') as ppdb:
         for line in ppdb.readlines():
             if line.startswith('ATOM') and line.find('OXT') <0 :
                 sline = line[:21] + 'B ' + line[23:]
                 OLines.append(sline)
         OLines.append('END\n')
     try:
-        if not os.path.exists(ROOT + 'NAVS/' + HLAclaty + '_native'):
-            os.mkdir(ROOT + 'NAVS/' + HLAclaty + '_native')
+        if not os.path.exists(ROOT + 'Native/' + HLAclaty + '_native'):
+            os.makedirs(ROOT + 'Native/' + HLAclaty + '_native')
     except OSError:
         pass
-    with open(ROOT + 'NAVS/' + HLAclaty + '_native/' + cc + '_native.pdb','w') as npdb:
+    with open(ROOT + 'Native/' + HLAclaty + '_native/' + cc + '_native.pdb','w') as npdb:
         for line in OLines: npdb.write(line)
 
 def sheba_run(ref,org):
@@ -56,6 +58,7 @@ def ext_pep(pdbx,ch):
         for line in OLines: F.write(line)
 
 wdir = os.getcwd()
+
 try:
 	if not os.path.exists(RES):
 		os.mkdir(RES,0777)
@@ -80,7 +83,7 @@ try:
 except OSError :
 	pass
 
-if not os.path.exists(ROOT + '/NAVS/' + HLAclaty + '_native/' + pdb + '_native.pdb'):
+if not os.path.exists(ROOT + '/Native/' + HLAclaty + '_native/' + pdb + '_native.pdb'):
 	gen_native(HLAclass,HLAtype,pdb)
 
 with open(RES + "/prepack_flags",'a') as pf :
@@ -100,7 +103,7 @@ subprocess.call(cmd,shell=True)
 
 with open(RES + "/run_flags1",'a') as rf :
     rf.write('-s ' + RES + '/PPK_' + pdb + '_' + seq + '_inp_0001.pdb\n')
-    rf.write('-native ' + ROOT + '/NAVS/' + HLAclaty + '_native/' + pdb + '_native.pdb\n')
+    rf.write('-native ' + ROOT + 'Native/' + HLAclaty + '_native/' + pdb + '_native.pdb\n')
     rf.write('-out:path:all ' + RES + '/PDB_1ST\n')
     rf.write('-out:file:scorefile score_1st_' + pdb + '_' + seq + '.sc\n')
     rf.write('-nstruct %s\n'%nout)
@@ -112,7 +115,7 @@ with open(RES + "/run_flags1",'a') as rf :
 
 with open(RES + "/run_flags2",'a') as rf1 :
     rf1.write('-s ' + RES + '/PPK_' + pdb + '_' + seq + '_inp_0001.pdb\n')
-    rf1.write('-native ' + ROOT + '/NAVS/' + HLAclaty + '_native/' + pdb + '_native.pdb\n')
+    rf1.write('-native ' + ROOT + 'Native/' + HLAclaty + '_native/' + pdb + '_native.pdb\n')
     rf1.write('-out:path:all ' + RES + '/PDB_2ND\n')
     rf1.write('-out:file:scorefile score_2nd_' + pdb + '_' + seq + '.sc\n')
     rf1.write('-nstruct %s\n'%nout)
@@ -123,8 +126,6 @@ with open(RES + "/run_flags2",'a') as rf1 :
 
 cmd1 = 'mpirun -np ' + num_cpu + ' ' + FLEXPEP_BIN + '/FlexPepDocking.mpi.linuxgccrelease -database ' + ROSETTA_DB + ' @' + RES + '/run_flags1 > ' + RES + '/run1.log'
 cmd2 = 'mpirun -np ' + num_cpu + ' ' + FLEXPEP_BIN + '/FlexPepDocking.mpi.linuxgccrelease -database ' + ROSETTA_DB + ' @' + RES + '/run_flags2 > ' + RES + '/run2.log'
-#print cmd1
-#print cmd2
 subprocess.call(cmd1,shell=True)
 subprocess.call(cmd2,shell=True)
 
@@ -136,16 +137,33 @@ with open(RES + '/total_score.tsv','a') as fx :
                 line = " ".join(line.split())
                 col = line.split(' ')
                 if line.find('total_score') > 0 :
-                    fx.write('%s\t%s\t%s\n'%(col[68],col[45],col[1]))
+                    if len(seq) == 8:
+                        fx.write('%s\t%s\t%s\n'%(col[67],col[44],col[1]))#(col[68],col[45],col[1]))
+		    elif len(seq) == 9:
+			fx.write('%s\t%s\t%s\n'%(col[68],col[45],col[1]))
+		    elif len(seq) == 10:
+			fx.write('%s\t%s\t%s\n'%(col[69],col[46],col[1]))
                 else :
-                    fx.write('PDB_1ST/%s.pdb\t%s\t%s\n'%(col[68],col[45],col[1]))
+		    if len(seq) == 8:
+                        fx.write('PDB_1ST/%s.pdb\t%s\t%s\n'%(col[67],col[44],col[1]))#(col[68],col[45],col[1]))
+		    elif len(seq) == 9:
+			fx.write('PDB_1ST/%s.pdb\t%s\t%s\n'%(col[68],col[45],col[1]))
+		    elif len(seq) == 10:
+			fx.write('PDB_1ST/%s.pdb\t%s\t%s\n'%(col[69],col[46],col[1]))
     with open(RES + '/PDB_2ND/score_2nd_' + pdb + '_' + seq + '.sc','r') as f1 :
         lines = f1.readlines()
         for line in lines :
             if line.startswith('SCORE:') > 0 and line.find('total_score') < 0 :
                 line = " ".join(line.split())
                 col = line.split(' ')
-                fx.write('PDB_2ND/%s.pdb\t%s\t%s\n'%(col[62],col[45],col[1]))
+		if len(seq) == 8:
+                    fx.write('PDB_2ND/%s.pdb\t%s\t%s\n'%(col[61],col[44],col[1]))
+		elif len(seq) == 9:
+		    fx.write('PDB_2ND/%s.pdb\t%s\t%s\n'%(col[62],col[45],col[1]))
+		elif len(seq) == 10:
+		    fx.write('PDB_2ND/%s.pdb\t%s\t%s\n'%(col[63],col[46],col[1]))
+
+
 
 df = pd.read_csv(RES + '/total_score.tsv',sep='\t')
 df = df.sort_values(['total_score'])
@@ -168,17 +186,20 @@ os.chdir(RES + '/DOCK_RES')
 dock_list = glob.glob('*.pdb')
 os.chdir(wdir)
 
-with open(ROOT + 'NAVS/' +HLAclass + '_list/' + HLAtype + '.list','r') as f3 :
-    for line in f3.readlines() : pdbs.append(line.strip())
+with open(ROOT + HLAclaty + '_' + str(len(seq)) + 'seq.list','r') as f3 :
+    if len(seq) != 9:
+        for line in f3.readlines() : pdbs.append(line.split()[2].lower())
+    else:
+	for line in f3.readlines() : pdbs.append(line.strip().lower())
 
 for ipdb in pdbs :
-    if not os.path.exists(ROOT + 'NAVS/' + HLAclaty + '_native/' + ipdb + '_native.pdb'):
+    if not os.path.exists(ROOT + 'Native/' + HLAclaty + '_native/' + ipdb + '_native.pdb'):
         gen_native(HLAclass, HLAtype, ipdb)
-    shutil.copy(ROOT + 'NAVS/' + HLAclaty + '_native/' + ipdb + '_native.pdb',RES + '/DOCK_RES')
+    shutil.copy(ROOT + 'Native/' + HLAclaty + '_native/' + ipdb + '_native.pdb',RES + '/DOCK_RES')
 
 os.chdir(RES + '/DOCK_RES')
 for ipdb in pdbs :
-    if pdb == pdb :
+    if pdb == ipdb :
         if not os.path.exists(ipdb + '_native_pep.pdb') :
             ext_pep(pdb + '_native','B')
         for dock in dock_list :

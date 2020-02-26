@@ -390,8 +390,8 @@ else :
 	PDBLIB = '/home/user1/'#'/awork10-3/kinase_proj/pdbs'
 
 	rec = sam.split('_')[0]
-	lig = sam.split('_')[1].split('-')[0]
-	chem = sam.split('-')[1]
+	#lig = #sam.split('_')[1].split('-')[0]
+	lig = sam.split('-')[1]
 
 	wdir = os.getcwd()
 
