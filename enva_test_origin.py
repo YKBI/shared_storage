@@ -57,7 +57,7 @@ def txt_writing(x):
 	newl = []
 	for i in sorted(glob.glob('*rev.pdb')):
 		os.system('csplit -f \'' + i + '_\' ' + i + ' \'/TER/\' --quiet')
-		os.system('/awork06-1/neoscan_gear/rmsd_total ' + PEPLIB + '/' + inpdb + '_pep.pdb ' + i + '_01 bb >> ' + x + '_rmsd.txt')
+		os.system('/home/user1/neoscan_gear/rmsd_total ' + PEPLIB + '/' + inpdb + '_pep.pdb ' + i + '_01 bb >> ' + x + '_rmsd.txt')
 	#rdf = pd.read_csv('rmsd.txt',sep='\s+',header=None)
 	for f,g in zip(sorted(glob.glob('*a.out')),sorted(glob.glob('*m.out'))):
 		sidx= []
@@ -178,7 +178,7 @@ def work_part(x):
 	pool1.close()
 	pool1.join()
 	for i in sorted(glob.glob('*[0-9].pdb')):
-		os.system('python /awork06-1/YKLee/py_script/pep_atom_revi.py ../../' + '_'.join(i.split('_')[1:4]) + '.pdb ' + i.split('.')[0] + '_red.pdb 1ST')
+		os.system('python /home/user1/pep_atom_revi.py ../../' + '_'.join(i.split('_')[1:4]) + '.pdb ' + i.split('.')[0] + '_red.pdb 1ST')
 		
 	print "########## End Of Revise ##########"
 	lst1 = sorted(glob.glob('*rev.pdb'))
@@ -200,7 +200,7 @@ def work_part(x):
 	pool2.close()
 	pool2.join()
 	for i in sorted(glob.glob('*[0-9].pdb')):
-                os.system('python /awork06-1/YKLee/py_script/pep_atom_revi.py ../../' + '_'.join(i.split('_')[1:4]) + '.pdb ' + i.split('.')[0] + '_red.pdb 2ND')
+                os.system('python /home/user1/pep_atom_revi.py ../../' + '_'.join(i.split('_')[1:4]) + '.pdb ' + i.split('.')[0] + '_red.pdb 2ND')
 	print "########## End Of Revise ##########"
 	lst2 = sorted(glob.glob('*rev.pdb'))
 	multi_part1(lst2)
@@ -232,9 +232,9 @@ else :
         feat = ['Energy_all[bond]','Energy_all[angle]','Energy_all[dih]','Energy_all[total]','Energy_all[vdw]','Energy_all[elec]','Energy_all[elec14]','Energy_rec_lig[elec14]','Energy_rec_lig[elec]']
         header = ['PDB','Energy_all[bond]','Energy_all[angle]','Energy_all[dih]','Energy_all[vdw14]','Energy_all[elec14]','Energy_all[vdw]','Energy_all[elec]','Energy_all[total]','Energy_rec_lig[bond]','Energy_rec_lig[angle]','Energy_rec_lig[dih]','Energy_rec_lig[vdw14]','Energy_rec_lig[elec14]','Energy_rec_lig[vdw]','Energy_rec_lig[elec]','Energy_rec_lig[total]','LIE_all[EELEC]','LIE_all[EVDW]','LIE_charge[EELEC]','LIE_charge[EVDW]','LIE_nonpolar[EELEC]','LIE_nonpolar[EVDW]','LIE_polar[EELEC]','LIE_polar[EVDW]']
         cl = ['energy_all','energy_rec_lig','lie_all','lie_charge','lie_nonpolar','lie_polar']
-        GEAR = '/awork06-1/neoscan_gear'
-	PDBLIB = '/awork06-1/YKLee/pdpdb/Neoscan_V2/Native/' + sam.split('_')[2] + '_native'
-	PEPLIB = '/awork06-1/YKLee/pdpdb/Neoscan_V2/v2/revise_pdb/peptide/' + sam.split('_')[2]
+        GEAR = '/home/user1/neoscan_gear'#'/awork06-1/neoscan_gear'
+	PDBLIB = '/home/user1/' + sam.split('_')[2] + '_native'#'/awork06-1/YKLee/pdpdb/Neoscan_V2/Native/' + sam.split('_')[2] + '_native'
+	PEPLIB = '/home/user1/'#'/awork06-1/YKLee/pdpdb/Neoscan_V2/v2/revise_pdb/peptide/' + sam.split('_')[2]
 	seq = sam.split('_')[0]
 	inpdb = sam.split('_')[1]
 	seqlen = len(seq)

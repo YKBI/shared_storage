@@ -14,13 +14,13 @@ nout = sys.argv[6]
 switch = sys.argv[7]
 HLAclaty = HLAclass[-1] + HLAtype
 RES = seq + '_' + pdb + '_' + HLAclass + HLAtype
-ROOT = '/home/user1/'
-FLEXPEP_BIN = '/lwork01/rosetta_src_2019.40.60963_bundle/main/source/bin'
-ROSETTA_DB = '/lwork01/rosetta_src_2019.40.60963_bundle/main/database'
-GEAR = '/lwork01/neoscan_gear'
-PEP_cwd = '/home/user1/'
-REC_cwd = '/home/user1/'
-Olines = []
+ROOT = '/awork06-1/YKLee/pdpdb/Neoscan_V2/'
+FLEXPEP_BIN = '/awork08/93_hong/rosetta_src_2019.14.60699_bundle/main/source/bin'
+ROSETTA_DB = '/awork08/93_hong/rosetta_src_2019.14.60699_bundle/main/database'
+GEAR = '/awork08/93_hong/NGS_ARS/Gear'
+PEP_cwd = '/awork06-1/YKLee/pdpdb/Neoscan_V2/v2/revise_pdb/peptide/'#'/awork06-1/YKLee/pdpdb/Neoscan_V2/peptide_pdb_conv/'#'/awork06-1/YKLee/NAVS/receptor/'
+REC_cwd = '/awork06-1/YKLee/pdpdb/Neoscan_V2/v2/revise_pdb/receptor/'#'/awork06-1/YKLee/pdpdb/Neoscan_V2/receptor_pdb/'#'/awork06-1/YKLee/NAVS/peptide/'
+Olines=[]
 def mutate(x,y):
 	with open('%s_%s_tmp.pdb'%(x,y),'r') as F:
 		for line in F.readlines():

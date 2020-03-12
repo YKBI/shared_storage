@@ -4,6 +4,7 @@ import os
 #pdbna = sys.argv[1]
 samin1 = sys.argv[1]
 samin2 = sys.argv[2]
+prefix = sys.argv[3]
 rec_dic = {}
 rec_n = []
 fff = []
@@ -145,7 +146,7 @@ def reading3(x):
 		        lig_ser = {}
 		        lig_ser[i[13:17].strip()] = i
 #revise pdb writing
-def writing1(x):
+def writing1(x,y):
     with open('_'.join(x.split('_')[:2]) + '_rev.pdb','w') as W:
         for i,j in zip(out_lines,rec_n):
             W.write(i[:7] + j.rjust(4) + '  ' + i[13:21] + 'A ' + i[23:] + '\n')
@@ -153,8 +154,9 @@ def writing1(x):
         for i,j in zip(het_lines,lig_n):
             W.write(i[:7] + j.rjust(4) + '  ' + i[13:21] + 'B ' + i[23:] + '\n') #j[:13] + het_dic[j[13:17].strip()].ljust(4) + j[17:])
         W.write('END\n')
-def writing2(x):
-    with open(x.split('.')[0] + '_rev.pdb','w') as W:
+def writing2(x,y):
+    namelines = x.split('.')[0].split('_')
+    with open('_'.join([namelines[1],namelines[2],namelines[5]]) + '_' + y + '_rev.pdb','w') as W:
 	for i,j in zip(out_lines,rec_n):
 	    W.write(i[:7] + j.rjust(4) + '  ' + i[13:] + '\n')
 	W.write('TER\n')
@@ -199,9 +201,9 @@ for i in rec_dic:
 	out_lines.append(rec_dic2[i][j].strip())
 
 if os.path.exists('feat.list'):
-    writing1(samin2)
+    writing1(samin2,prefix)
 else:
-    writing2(samin2)
+    writing2(samin2,prefix)
 
-writing2(samin2)
+#writing2(samin2,prefix)
 #os.chdir('../')'''

@@ -25,13 +25,13 @@ def enva_working(pdb):
         
 	#os.system('cp %s.pdb %s.pdb'%(trpdb,trpdb.split('.')[2]))
         if not os.path.exists(inpdb + '_a.out'):
-                os.system(GEAR + '/enva.v2 -a ' + trpdb + '_new.pdb > ' + trpdb + '_a.out')
+                os.system(GEAR + '/enva_rec.v1.1 -a ' + trpdb + '_new.pdb > ' + trpdb + '_a.out')
         if not os.path.exists(inpdb + '_b.out'):
-                os.system(GEAR + '/enva.v2 -b ' + trpdb + '_het.pdb > ' + trpdb + '_b.out')
+                os.system(GEAR + '/enva_rec.v1.1 -b ' + trpdb + '_het.pdb > ' + trpdb + '_b.out')
         if not os.path.exists(inpdb + '_m.out'):
-                os.system(GEAR + '/enva.v2 -m ' + trpdb + '_new.pdb ' + trpdb.split('.')[0] + 'B > ' + trpdb + '_m.out')
+                os.system(GEAR + '/enva_rec.v1.1 -m ' + trpdb + '_new.pdb ' + trpdb.split('.')[0] + 'B > ' + trpdb + '_m.out')
 	if not os.path.exists('*.env'):
-		os.system(GEAR + '/enva.v2 -e ' + trpdb + '_new.pdb B')
+		os.system(GEAR + '/enva_rec.v1.1 -e ' + trpdb + '_new.pdb B')
         #os.system('rm -rf ' + inpdb.split('_')[-3] + '.pdb')
 	
 def original_enva(pdb):
@@ -42,13 +42,13 @@ def original_enva(pdb):
 	#os.system('cat %s_db %s_01 > %s_new.pdb'%(trpdb,trpdb,trpdb))
 	os.system('sed \'s/ATOM  /HETATM/\' %s_B.pdb > %s_02 ;cat %s_A.pdb %s_02 > %s_het.pdb'%(trpdb,trpdb,trpdb,trpdb,trpdb))
 	if not os.path.exists(inpdb + '_a.out'):
-                os.system(GEAR + '/enva.v2 -a ' + trpdb + '.pdb > ' + trpdb + '_a.out')
+                os.system(GEAR + '/enva_rec.v1.1 -a ' + trpdb + '.pdb > ' + trpdb + '_a.out')
         if not os.path.exists(inpdb + '_b.out'):
-                os.system(GEAR + '/enva.v2 -b ' + trpdb + '_het.pdb > ' + trpdb + '_b.out')
+                os.system(GEAR + '/enva_rec.v1.1 -b ' + trpdb + '_het.pdb > ' + trpdb + '_b.out')
         if not os.path.exists(inpdb + '_m.out'):
-                os.system(GEAR + '/enva.v2 -m ' + trpdb + '.pdb ' + trpdb.split('.')[0] + 'B > ' + trpdb + '_m.out')
+                os.system(GEAR + '/enva_rec.v1.1 -m ' + trpdb + '.pdb ' + trpdb.split('.')[0] + 'B > ' + trpdb + '_m.out')
         if not os.path.exists('*.env'):
-                os.system(GEAR + '/enva.v2 -e ' + trpdb + '.pdb B')
+                os.system(GEAR + '/enva_rec.v1.1 -e ' + trpdb + '.pdb B')
 #def tmp_ee(pdb):
 #	trpdb = '_'.join(pdb.split('_')[:2])
 #	if not os.path.exists('*.env'):
@@ -183,7 +183,7 @@ def txt_writing(x):
 
 def act(x,aa):
 	#reduce and revise
-	pdbs = sorted(glob.glob('*.pdb.*'))
+	pdbs = sorted(glob.glob('*.pdb.*'))[:10]
 	pool2 = multiprocessing.Pool(6)
 	pool2.map(red_rev,pdbs)
 	pool2.close()
@@ -271,10 +271,12 @@ def act(x,aa):
 	df_final2.to_csv(sam + '-' + x + '_total.txt',sep='\t',index=False,na_rep='-')
 	os.chdir('../')
 sam = sys.argv[1]
+freq = sys.argv[2]
 GEAR = '/awork06-1/neoscan_gear'
-PDBLIB = '/awork06-1/YKLee/pdpdb/Neoscan_V2/Native/' + sam.split('_')[2] + '_native'
+PDBLIB = '/awork06-1/YKLee/final_class2/' + freq + '_'.join(sam.split('_')[1:]) + '/minimize'#'/awork06-1/YKLee/pdpdb/Neoscan_V2/Native/' + sam.split('_')[2] + '_native'
 inpdb = sam.split('_')[0]
 HLAclass = sam.split('_')[2]
+with open()
 seq = sam.split('_')[1]
 seqlen = len(seq)
 os.chdir(sam)

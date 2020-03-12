@@ -1,25 +1,24 @@
-import os
-import sys
+import os,sys,psutil,glob
 import subprocess
-import shutil
 import pandas as pd
-import glob
-
 seq = sys.argv[1]
 pdb = sys.argv[2]
 HLAclass = sys.argv[3]
 HLAtype = sys.argv[4]
-num_cpu = sys.argv[5]
-nout = sys.argv[6]
-switch = sys.argv[7]
+num_cpu = str(psutil.cpu_count()-1)
+nout = sys.argv[5]
+switch = sys.argv[6]
 HLAclaty = HLAclass[-1] + HLAtype
 RES = seq + '_' + pdb + '_' + HLAclass + HLAtype
 ROOT = '/home/user1/'
-FLEXPEP_BIN = '/lwork01/rosetta_src_2019.40.60963_bundle/main/source/bin'
+os.environ['rosetta'] = '/lwork01/rosetta_src_2019.40.60963_bundle/main/source/bin/'
+rosetta = os.environ['rosetta']
+os.environ['PATH'] += ':' + rosetta + ':' + os.environ['PATH']
+#FLEXPEP_BIN = '/lwork01/rosetta_src_2019.40.60963_bundle/main/source/bin'
 ROSETTA_DB = '/lwork01/rosetta_src_2019.40.60963_bundle/main/database'
-GEAR = '/lwork01/neoscan_gear'
-PEP_cwd = '/home/user1/'
-REC_cwd = '/home/user1/'
+GEAR = '/home/user1/neoscan_gear'
+PEP_cwd = '/home/user1/minimize/'
+REC_cwd = '/home/user1/minimize/'
 Olines = []
 def mutate(x,y):
 	with open('%s_%s_tmp.pdb'%(x,y),'r') as F:
@@ -39,11 +38,11 @@ def gen_native(aa,bb,cc):
     HLAclaty = aa[-1] + bb
     OLines = []
     #with open(REC_cwd + RES + '/' + cc + '_rec.pdb','r') as rpdb:
-    with open(REC_cwd + '/' + cc + '_rec.pdb','r') as rpdb:
+    with open(REC_cwd + '/' + cc + '_rev_A.pdb','r') as rpdb:
         for line in rpdb.readlines(): OLines.append(line)
         OLines.append('TER\n')
     #with open(PEP_cwd + RES + '/'+ cc + '_pep.pdb','r') as ppdb:
-    with open(PEP_cwd + '/' + cc + '_pep.pdb','r') as ppdb:
+    with open(PEP_cwd + '/' + cc + '_rev_B.pdb','r') as ppdb:
         for line in ppdb.readlines():
             if line.startswith('ATOM') and line.find('OXT') <0 :
                 sline = line[:21] + 'B ' + line[23:]
@@ -118,8 +117,7 @@ with open(RES + "/prepack_flags",'a') as pf :
     pf.write('-flexpep_prepack\n')
     pf.write('-nstruct 1\n')
 
-cmd = FLEXPEP_BIN + '/FlexPepDocking.linuxgccrelease -database ' + ROSETTA_DB + ' @' + RES + '/prepack_flags > ' + RES + '/prepack.log'
-subprocess.call(cmd,shell=True)
+os.system('FlexPepDocking.linuxgccrelease -database ' + ROSETTA_DB + ' @' + RES + '/prepack_flags > ' + RES + '/prepack.log')
 
 with open(RES + "/run_flags1",'a') as rf :
     rf.write('-s ' + RES + '/PPK_' + pdb + '_' + seq + '_inp_0001.pdb\n')
@@ -144,10 +142,8 @@ with open(RES + "/run_flags2",'a') as rf1 :
     rf1.write('-ex1\n')
     rf1.write('-ex2aro\n')
 
-cmd1 = 'mpirun -np ' + num_cpu + ' ' + FLEXPEP_BIN + '/FlexPepDocking.mpi.linuxgccrelease -database ' + ROSETTA_DB + ' @' + RES + '/run_flags1 > ' + RES + '/run1.log'
-cmd2 = 'mpirun -np ' + num_cpu + ' ' + FLEXPEP_BIN + '/FlexPepDocking.mpi.linuxgccrelease -database ' + ROSETTA_DB + ' @' + RES + '/run_flags2 > ' + RES + '/run2.log'
-subprocess.call(cmd1,shell=True)
-subprocess.call(cmd2,shell=True)
+os.system('mpirun -np ' + num_cpu + ' FlexPepDocking.mpi.linuxgccrelease -database ' + ROSETTA_DB + ' @' + RES + '/run_flags1 > ' + RES + '/run1.log')
+os.system('mpirun -np ' + num_cpu + ' FlexPepDocking.mpi.linuxgccrelease -database ' + ROSETTA_DB + ' @' + RES + '/run_flags2 > ' + RES + '/run2.log')
 
 with open(RES + '/total_score.tsv','a') as fx :
     with open(RES + '/PDB_1ST/score_1st_' + pdb + '_' + seq + '.sc','r') as f :
