@@ -158,6 +158,7 @@ parser.add_argument('-heat-time', metavar='[time for heating, ns]', dest='heat_t
 parser.add_argument('-eq-restraint-wt', dest='eq_rest_wt', type=float, default=150.0, help='Restraint force constant in equilibration (heating), default: 150.0 (kcal/mol*Angstrom^2))')
 parser.add_argument('-target-temp', metavar='[heating target temperature, K]', dest='tar_temp', type=float, default=300, help='target temperature for heating, default : 300 K')
 parser.add_argument('-equil-time', metavar='[time for equilibration, ns]', dest='eq_time', type=float, default=10.0, help='simulation time for 2nd equilibration (equilibration), default: 10 ns ')
+parser.add_argument('-pre-prod-time', metavar='[time for pre-MD, ns]', dest='eq_time1', type=float, default=0.0, help='simulation time for 2nd equilibration (equilibration), default: 0 ns ')
 parser.add_argument('-prod-total-time', metavar='[total time for production, ns]', dest='prod_total_time', type=float, default=100.0, help='total time of simulation for production, default: 100 ns')
 parser.add_argument('-prod-freq-time', metavar='[time for sub production run, ns]', dest='prod_freq_time', type=float, default=0.1, help='freq time of simulation for production, default: 0.1 ns')
 
@@ -223,6 +224,7 @@ heat_time   = args.heat_time  # ns
 eq_rest_wt  = args.eq_rest_wt # kcal/(mol*Angstrom^2)
 target_temp = args.tar_temp   # K
 eq_time     = args.eq_time    # ns
+eq_time1	=args.eq_time1 #ns
 wrt_eq_out_freq      = args.wrt_eq_out_freq     # ns
 wrt_eq_crd_freq      = args.wrt_eq_crd_freq     # ns
 wrt_eq_rst_freq      = args.wrt_eq_rst_freq     # ratio, wrt_time/total_time
@@ -266,7 +268,10 @@ def set_sim_options(filename, seed_number=None, process=None, str_res_id=None, e
                nstlim = int(heat_time * fs2ns/dt)
                new_cont.append(opt.replace('TOTAL_HEAT_STEPS', '%d' % nstlim))
             elif ('TOTAL_EQ_STEPS' in opt):
-               nstlim = int(eq_time * fs2ns/dt)
+               if process == 'PMD':
+                  nstlim = int(eq_time1 * fs2ns/dt)
+               else:
+                  nstlim = int(eq_time * fs2ns/dt)
                new_cont.append(opt.replace('TOTAL_EQ_STEPS', '%d' % nstlim))
             elif ('TOTAL_PROD_STEPS' in opt):
                nstlim = int(prod_freq_time * fs2ns/dt)
@@ -289,7 +294,7 @@ def set_sim_options(filename, seed_number=None, process=None, str_res_id=None, e
             elif ('RESTRAINT_WT_PR' in opt):
                new_cont.append(opt.replace('RESTRAINT_WT_PR', '%.1f' % eq_rest_wt))
             elif ('WRT_OUT_FREQ' in opt):
-               if process == 'HEAT' or process == 'EQ':
+               if process == 'HEAT' or process == 'EQ' or process == 'PMD':
                   nptr = int(wrt_eq_out_freq * fs2ns/dt)
                elif process == 'PROD':
                   nptr = int(wrt_pd_out_freq * fs2ns/dt)
@@ -298,7 +303,7 @@ def set_sim_options(filename, seed_number=None, process=None, str_res_id=None, e
                   sys.exit()
                new_cont.append(opt.replace('WRT_OUT_FREQ', '%d' % nptr))
             elif ('WRT_CRD_FREQ' in opt):
-               if process == 'HEAT' or process == 'EQ':
+               if process == 'HEAT' or process == 'EQ' or process == 'PMD':
                   ntwx = int(wrt_eq_crd_freq * fs2ns/dt)
                elif process == 'PROD':
                   ntwx = int(wrt_pd_crd_freq * fs2ns/dt)
@@ -312,6 +317,8 @@ def set_sim_options(filename, seed_number=None, process=None, str_res_id=None, e
                   ntwr = int(wrt_eq_rst_freq*nstlim)
                elif process == 'EQ':
                   nstlim = int(eq_time * fs2ns/dt)
+                  ntwr = int(wrt_eq_rst_freq*nstlim)
+               elif process == 'PMD':
                   ntwr = int(wrt_eq_rst_freq*nstlim)
                elif process == 'PROD':
                   nstlim = int(prod_freq_time * fs2ns/dt)
@@ -749,9 +756,15 @@ for i in range(num_traj):
     if (set_fix):    
        shutil.copy('%s/simulation_in/tmp_equil_2_fix.in' % (common), './equil_2.in')
        set_sim_options('./equil_2.in', process='EQ', str_res_id=lstart, end_res_id=lres)
+       if iamd != 0 :
+          shutil.copy('%s/simulation_in/tmp_equil_2_fix.in' % (common), './equil_3.in')
+          set_sim_options('./equil_3.in', process='PMD', str_res_id=lstart, end_res_id=lres)
     else:
        shutil.copy('%s/simulation_in/tmp_equil_2.in' % (common), './equil_2.in')
        set_sim_options('./equil_2.in', process='EQ')
+       if iamd != 0 :
+          shutil.copy('%s/simulation_in/tmp_equil_2.in' % (common), './equil_3.in')
+          set_sim_options('./equil_3.in', process='PMD')
        
     
     if (fix_gpu_device_id):
@@ -767,8 +780,12 @@ for i in range(num_traj):
 mpirun -np %d pmemd.MPI -O -i equil_1.in -o equil_1.out -p ../%s_solv.top -c ../%s_min2.rst -r %s_equil_1.rst -x %s_equil_1.crd -ref ../%s_min2.rst
 
 mpirun -np %d pmemd.MPI -O -i equil_2.in -o equil_2.out -p ../%s_solv.top -c %s_equil_1.rst -r %s_equil_2.rst -x %s_equil_2.crd -ref ../%s_min2.rst
+
 ''' \
           % (num_cpu, tag, tag, tag, tag, tag, num_cpu, tag, tag, tag, tag, tag)
+          if iamd != 0 :
+             amd_script = 'mpirun -np %d pmemd.MPI -O -i equil_3.in -o equil_3.out -p ../%s_solv.top -c %s_equil_2.rst -r %s_equil_3.rst -x %s_equil_3.crd -ref ../%s_min2.rst'%(num_cpu, tag, tag, tag, tag, tag)
+             equil_script = equil_script + amd_script
        else:
           equil_script = '''#!/bin/sh
 
@@ -776,7 +793,10 @@ mpirun -np %d pmemd.MPI -O -i equil_1.in -o equil_1.out -p ../%s_solv.top -c ../
 
 mpirun -np %d pmemd.MPI -O -i equil_2.in -o equil_2.out -p ../%s_solv.top -c %s_equil_1.rst -r %s_equil_2.rst -x %s_equil_2.crd 
 ''' \
-          % (num_cpu, tag, tag, tag, tag, tag, num_cpu, tag, tag, tag, tag) 
+          % (num_cpu, tag, tag, tag, tag, tag, num_cpu, tag, tag, tag, tag, num_cpu, tag, tag, tag, tag) 
+          if iamd != 0 :
+             amd_script = 'mpirun -np %d pmemd.MPI -O -i equil_3.in -o equil_3.out -p ../%s_solv.top -c %s_equil_2.rst -r %s_equil_3.rst -x %s_equil_3.crd'%(num_cpu, tag, tag, tag, tag)
+             equil_script = equil_script + amd_script
     else:   # ! default : cuda version
        if (set_fix):
           equil_script = '''#!/bin/sh
@@ -788,6 +808,9 @@ pmemd.cuda -O -i equil_1.in -o equil_1.out -p ../%s_solv.top -c ../%s_min2.rst -
 pmemd.cuda -O -i equil_2.in -o equil_2.out -p ../%s_solv.top -c %s_equil_1.rst -r %s_equil_2.rst -x %s_equil_2.crd -ref ../%s_min2.rst
 ''' \
           % (gpu_dev_id, tag, tag, tag, tag, tag, tag, tag, tag, tag, tag)
+          if iamd != 0 :
+             amd_script = 'pmemd.cuda -O -i equil_3.in -o equil_3.out -p ../%s_solv.top -c %s_equil_2.rst -r %s_equil_3.rst -x %s_equil_3.crd -ref ../%s_min2.rst'%(tag, tag, tag, tag, tag)
+             equil_script = equil_script + amd_script
        else:
           equil_script = '''#!/bin/sh
 
@@ -797,7 +820,10 @@ pmemd.cuda -O -i equil_1.in -o equil_1.out -p ../%s_solv.top -c ../%s_min2.rst -
 
 pmemd.cuda -O -i equil_2.in -o equil_2.out -p ../%s_solv.top -c %s_equil_1.rst -r %s_equil_2.rst -x %s_equil_2.crd
 ''' \
-          % (gpu_dev_id, tag, tag, tag, tag, tag, tag, tag, tag, tag)
+          % (gpu_dev_id, tag, tag, tag, tag, tag, tag, tag, tag, tag,)
+          if iamd != 0:
+             amd_script = 'pmemd.cuda -O -i equil_3.in -o equil_3.out -p ../%s_solv.top -c %s_equil_2.rst -r %s_equil_3.rst -x %s_equil_3.crd'%(tag, tag, tag, tag)
+             equil_script = equil_script + amd_script
     run_equil = open('run_equil.sh','w')
     #print >> run_equil, equil_script
     #print (equil_script, end='', file=run_equil)
@@ -823,10 +849,13 @@ pmemd.cuda -O -i equil_2.in -o equil_2.out -p ../%s_solv.top -c %s_equil_1.rst -
 
 export CUDA_VISIBLE_DEVICES='%d'
 
-pmemd.cuda -O -i equil_2_t.in -o equil_2.out -p ../%s_solv.top -c %s_equil_2.rst7 -r %s_equil_2.rst -x %s_equil_2.crd -ref ../%s_initial_solv.crd
+pmemd.cuda -O -i equil_2_t.in -o equil_2.out -p ../%s_solv.top -c %s_equil_2.rst7 -r %s_equil_2.rst -x %s_equil_2.crd -ref ../%s_min2.rst
 
 ''' \
           % (fixed_gpu_id, tag, tag, tag, tag,  tag)
+          if iamd != 0 :
+             amd_script = 'pmemd.cuda -O -i equil_3.in -o equil_3.out -p ../%s_solv.top -c %s_equil_2.rst -r %s_equil_3.rst -x %s_equil_3.crd -ref ../%s_min2.rst'%(tag, tag, tag, tag, tag)
+             tequil_script = tequil_script + amd_script   
        else:
           tequil_script = '''#!/bin/sh
 
@@ -836,15 +865,21 @@ pmemd.cuda -O -i equil_2_t.in -o equil_2.out -p ../%s_solv.top -c %s_equil_2.rst
 
 ''' \
           % (fixed_gpu_id, tag, tag, tag, tag)
+          if iamd != 0 :
+             amd_script = 'pmemd.cuda -O -i equil_3.in -o equil_3.out -p ../%s_solv.top -c %s_equil_2.rst -r %s_equil_3.rst -x %s_equil_3.crd'%(tag, tag, tag, tag)
+             tequil_script = tequil_script + amd_script
        run_equil_t = open('run_equil_t.sh','w')
        run_equil_t.write(tequil_script)
        st = os.stat('run_equil_t.sh')
        os.chmod('run_equil_t.sh', st.st_mode | stat.S_IEXEC)
        subprocess.call(['./run_equil_t.sh'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT) 
        fequil2 = check_equil('equil_2.out')
+       fequil3 = check_equil('equil_3.out')
+    else:
+       fequil3 = check_equil('equil_3.out')
     ###############################################
     ##---- production dir
-    if fequil1 > 0 and fequil2 > 0 :
+    if fequil1 > 0 and fequil2 > 0 and fequil3 > 0 :
        os.chdir('../%s' % (prod_dir))
        if (set_fix):
           shutil.copy('%s/simulation_in/tmp_md_fix.in' % (common), './md.in')
@@ -869,27 +904,33 @@ pmemd.cuda -O -i equil_2_t.in -o equil_2.out -p ../%s_solv.top -c %s_equil_2.rst
        else:
           shutil.copy('%s/md_local_script/prep_production_run_CUDA_v1.py' % (bin_dir), './prep_production_run_CUDA.py')
           if (set_fix):
-             os.system('./prep_production_run_CUDA.py -i %d -t %d -f %d -n %s -p ../%s_solv.top -r %s_equil_2.rst -fix' \
-                    % (gpu_dev_id, \
-                        # GPU card id
-                        int(prod_total_time), \
-                        # total production time (overall time, ns)
-                        int(prod_freq_time * 1000), \
-                        # one production time ( ps )
-                        '%s_%dK_%s' % (tag, int(target_temp), traj_id),\
-                        # name of this simulation trajectory
-                        tag, tag))
+             if iamd != 0:
+                os.system('./prep_production_run_CUDA.py -i %d -t %d -f %d -n %s -p ../%s_solv.top -r %s_equil_3.rst -fix'%(gpu_dev_id,int(prod_total_time),int(prod_freq_time * 1000),'%s_%dK_%s' % (tag, int(target_temp), traj_id),tag, tag))   
+             else:
+                os.system('./prep_production_run_CUDA.py -i %d -t %d -f %d -n %s -p ../%s_solv.top -r %s_equil_2.rst -fix' \
+                       % (gpu_dev_id, \
+                           # GPU card id
+                           int(prod_total_time), \
+                           # total production time (overall time, ns)
+                           int(prod_freq_time * 1000), \
+                           # one production time ( ps )
+                           '%s_%dK_%s' % (tag, int(target_temp), traj_id),\
+                           # name of this simulation trajectory
+                           tag, tag))
           else:
-             os.system('./prep_production_run_CUDA.py -i %d -t %d -f %d -n %s -p ../%s_solv.top -r %s_equil_2.rst' \
-                    % (gpu_dev_id, \
-                       # GPU card id
-                       int(prod_total_time), \
-                       # total production time (overall time, ns)
-                       int(prod_freq_time * 1000), \
-                       # one production time ( ps )
-                       '%s_%dK_%s' % (tag, int(target_temp), traj_id),\
-                       # name of this simulation trajectory
-                       tag, tag))     # name of topology
+             if iamd != 0:
+                os.system('./prep_production_run_CUDA.py -i %d -t %d -f %d -n %s -p ../%s_solv.top -r %s_equil_3.rst'%(gpu_dev_id,int(prod_total_time),int(prod_freq_time * 1000),'%s_%dK_%s' % (tag, int(target_temp), traj_id),tag, tag))
+             else:
+                os.system('./prep_production_run_CUDA.py -i %d -t %d -f %d -n %s -p ../%s_solv.top -r %s_equil_2.rst' \
+                       % (gpu_dev_id, \
+                          # GPU card id
+                          int(prod_total_time), \
+                          # total production time (overall time, ns)
+                          int(prod_freq_time * 1000), \
+                          # one production time ( ps )
+                          '%s_%dK_%s' % (tag, int(target_temp), traj_id),\
+                          # name of this simulation trajectory
+                          tag, tag))     # name of topology
        subprocess.call('./run_production.sh',shell=True)
     
        os.chdir('../../')
